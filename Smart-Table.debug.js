@@ -509,8 +509,8 @@
                 // load data from remote server
                 if (scope.remote) {
                     var ds = scope.ds();
-                    var sortby = lastColumnSort.map;
-                    var reverse = lastColumnSort.reverse;
+                    var sortby = lastColumnSort.map ? lastColumnSort.map : null;
+                    var reverse = lastColumnSort.map ? lastColumnSort.reverse : null;
                     var result = ds(scope.currentPage, scope.itemsByPage, sortby, reverse);
                     scope.currentPage = result.page;
                     scope.numberOfPages = calculateNumberOfPages(result.count);
