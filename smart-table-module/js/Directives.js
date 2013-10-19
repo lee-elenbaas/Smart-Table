@@ -7,7 +7,7 @@
                 restrict: 'EA',
                 scope: {
                     columnCollection: '=columns',
-                    dataCollection: '=rows',
+                    ds: '&',
                     config: '='
                 },
                 replace: 'true',
@@ -38,32 +38,22 @@
 
                     //insert columns from column config
                     scope.$watch('columnCollection', function (oldValue, newValue) {
-
                         ctrl.clearColumns();
-
                         if (scope.columnCollection) {
                             for (var i = 0, l = scope.columnCollection.length; i < l; i++) {
                                 ctrl.insertColumn(scope.columnCollection[i]);
                             }
-                        } else {
-                            //or guess data Structure
-                            if (scope.dataCollection && scope.dataCollection.length > 0) {
-                                templateObject = scope.dataCollection[0];
-                                angular.forEach(templateObject, function (value, key) {
-                                    if (key[0] != '$') {
-                                        ctrl.insertColumn({label: key, map: key});
-                                    }
-                                });
-                            }
-                        }
+                        } 
                     }, true);
 
+                    /**
                     //if item are added or removed into the data model from outside the grid
                     scope.$watch('dataCollection.length', function (oldValue, newValue) {
                         if (oldValue !== newValue) {
                             ctrl.sortBy();//it will trigger the refresh... some hack ?
                         }
                     });
+                    */
                 }
             };
         }])
@@ -78,7 +68,7 @@
                     element.bind('click', function () {
                         scope.$apply(function () {
                             ctrl.toggleSelection(scope.dataRow);
-                        })
+                        });
                     });
                 }
             };

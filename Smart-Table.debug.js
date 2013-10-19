@@ -50,6 +50,7 @@
 })(window, angular);
 
 
+
 /* Directives */
 (function (angular) {
     "use strict";
@@ -59,7 +60,7 @@
                 restrict: 'EA',
                 scope: {
                     columnCollection: '=columns',
-                    dataCollection: '=rows',
+                    ds: '&',
                     config: '='
                 },
                 replace: 'true',
@@ -90,32 +91,22 @@
 
                     //insert columns from column config
                     scope.$watch('columnCollection', function (oldValue, newValue) {
-
                         ctrl.clearColumns();
-
                         if (scope.columnCollection) {
                             for (var i = 0, l = scope.columnCollection.length; i < l; i++) {
                                 ctrl.insertColumn(scope.columnCollection[i]);
                             }
-                        } else {
-                            //or guess data Structure
-                            if (scope.dataCollection && scope.dataCollection.length > 0) {
-                                templateObject = scope.dataCollection[0];
-                                angular.forEach(templateObject, function (value, key) {
-                                    if (key[0] != '$') {
-                                        ctrl.insertColumn({label: key, map: key});
-                                    }
-                                });
-                            }
-                        }
+                        } 
                     }, true);
 
+                    /**
                     //if item are added or removed into the data model from outside the grid
                     scope.$watch('dataCollection.length', function (oldValue, newValue) {
                         if (oldValue !== newValue) {
                             ctrl.sortBy();//it will trigger the refresh... some hack ?
                         }
                     });
+                    */
                 }
             };
         }])
@@ -130,7 +121,7 @@
                     element.bind('click', function () {
                         scope.$apply(function () {
                             ctrl.toggleSelection(scope.dataRow);
-                        })
+                        });
                     });
                 }
             };
@@ -335,9 +326,11 @@
 
 /*table module */
 
-(function (angular) {
+(function(angular) {
     "use strict";
-    angular.module('smartTable.table', ['smartTable.column', 'smartTable.utilities', 'smartTable.directives', 'smartTable.filters', 'ui.bootstrap.pagination.smartTable'])
+    angular.module('smartTable.table', ['smartTable.column', 'smartTable.utilities', 'smartTable.directives',
+        'smartTable.filters', 'ui.bootstrap.pagination.smartTable'
+    ])
         .constant('DefaultTableConfiguration', {
             selectionMode: 'none',
             isGlobalSearchActivated: false,
@@ -351,38 +344,38 @@
             filterAlgorithm: ''
         })
         .controller('TableCtrl', ['$scope', 'Column', '$filter', '$parse', 'ArrayUtility', 'DefaultTableConfiguration', function (scope, Column, filter, parse, arrayUtility, defaultConfig) {
-
+            scope.remote = angular.isFunction(scope.ds());
             scope.columns = [];
-            scope.dataCollection = scope.dataCollection || [];
-            scope.displayedCollection = []; //init empty array so that if pagination is enabled, it does not spoil performances
-            scope.numberOfPages = calculateNumberOfPages(scope.dataCollection);
+            scope.rows = []; //init empty array so that if pagination is enabled, it does not spoil performances
             scope.currentPage = 1;
-            scope.holder = {isAllSelected: false};
+            scope.holder = {
+                isAllSelected: false
+            };
 
             var predicate = {},
                 lastColumnSort;
 
             function isAllSelected() {
                 var i,
-                    l = scope.displayedCollection.length;
+                    l = scope.rows.length;
                 for (i = 0; i < l; i++) {
-                    if (scope.displayedCollection[i].isSelected !== true) {
+                    if (scope.rows[i].isSelected !== true) {
                         return false;
                     }
                 }
                 return true;
             }
 
-            function calculateNumberOfPages(array) {
-
-                if (!angular.isArray(array) || array.length === 0 || scope.itemsByPage < 1) {
+            function calculateNumberOfPages(count) {
+                if (!count || scope.itemsByPage < 1) {
                     return 1;
                 }
-                return Math.ceil(array.length / scope.itemsByPage);
+                return Math.ceil(count / scope.itemsByPage);
             }
 
             function sortDataRow(array, column) {
-                var sortAlgo = (scope.sortAlgorithm && angular.isFunction(scope.sortAlgorithm)) === true ? scope.sortAlgorithm : filter('orderBy');
+                var sortAlgo = (scope.sortAlgorithm && angular.isFunction(scope.sortAlgorithm)) === true ?
+                    scope.sortAlgorithm : filter('orderBy');
                 if (column) {
                     return arrayUtility.sort(array, sortAlgo, column.sortPredicate, column.reverse);
                 } else {
@@ -406,13 +399,17 @@
                             oldValue = array[i].isSelected;
                             array[i].isSelected = false;
                             if (oldValue === true) {
-                                scope.$emit('selectionChange', {item: array[i]});
+                                scope.$emit('selectionChange', {
+                                    item: array[i]
+                                });
                             }
                         }
                     }
                     dataRow.isSelected = select;
                     scope.holder.isAllSelected = isAllSelected();
-                    scope.$emit('selectionChange', {item: dataRow});
+                    scope.$emit('selectionChange', {
+                        item: dataRow
+                    });
                 }
             }
 
@@ -420,7 +417,7 @@
              * set the config (config parameters will be available through scope
              * @param config
              */
-            this.setGlobalConfig = function (config) {
+            this.setGlobalConfig = function(config) {
                 angular.extend(scope, defaultConfig, config);
             };
 
@@ -428,13 +425,16 @@
              * change the current page displayed
              * @param page
              */
-            this.changePage = function (page) {
+            this.changePage = function(page) {
                 var oldPage = scope.currentPage;
                 if (angular.isNumber(page.page)) {
                     scope.currentPage = page.page;
-                    scope.displayedCollection = this.pipe(scope.dataCollection);
+                    scope.rows = this.pipe();
                     scope.holder.isAllSelected = isAllSelected();
-                    scope.$emit('changePage', {oldValue: oldPage, newValue: scope.currentPage});
+                    scope.$emit('changePage', {
+                        oldValue: oldPage,
+                        newValue: scope.currentPage
+                    });
                 }
             };
 
@@ -443,7 +443,7 @@
              * @method sortBy
              * @param column
              */
-            this.sortBy = function (column) {
+            this.sortBy = function(column) {
                 var index = scope.columns.indexOf(column);
                 if (index !== -1) {
                     if (column.isSortable === true) {
@@ -458,7 +458,7 @@
                     }
                 }
 
-                scope.displayedCollection = this.pipe(scope.dataCollection);
+                scope.rows = this.pipe();
             };
 
             /**
@@ -466,7 +466,7 @@
              * @param input
              * @param column
              */
-            this.search = function (input, column) {
+            this.search = function(input, column) {
 
                 var j, l = scope.columns.length;
                 //update column and global predicate
@@ -483,8 +483,21 @@
                 for (j = 0; j < l; j++) {
                     predicate[scope.columns[j].map] = scope.columns[j].filterPredicate;
                 }
-                scope.displayedCollection = this.pipe(scope.dataCollection);
+                scope.rows = this.pipe();
+            };
 
+
+            this.detectColumns = function(rows){
+                // if no column is set, we detect it from row data
+                if (scope.columns.length == 0 && rows && rows.length > 0) {
+                    var templateObject = rows[0];
+                    var $this = this;
+                    angular.forEach(templateObject, function (value, key) {
+                        if (key[0] != '$') {
+                            $this.insertColumn({label: key, map: key});
+                        }
+                    });
+                }
             };
 
             /**
@@ -492,13 +505,29 @@
              * @param array
              * @returns Array, an array result of the operations on input array
              */
-            this.pipe = function (array) {
-                var filterAlgo = (scope.filterAlgorithm && angular.isFunction(scope.filterAlgorithm)) === true ? scope.filterAlgorithm : filter('filter'),
-                    output;
-                //filter and sort are commutative
-                output = sortDataRow(arrayUtility.filter(array, filterAlgo, predicate), lastColumnSort);
-                scope.numberOfPages = calculateNumberOfPages(output);
-                return scope.isPaginationEnabled ? arrayUtility.fromTo(output, (scope.currentPage - 1) * scope.itemsByPage, scope.itemsByPage) : output;
+            this.pipe = function() {
+                // load data from remote server
+                if (scope.remote) {
+                    var ds = scope.ds();
+                    var sortby = lastColumnSort.map;
+                    var reverse = lastColumnSort.reverse;
+                    var result = ds(scope.currentPage, scope.itemsByPage, sortby, reverse);
+                    scope.currentPage = result.page;
+                    scope.numberOfPages = calculateNumberOfPages(result.count);
+                    this.detectColumns(result.data);
+                    return result.data;
+                } else {
+                    // load data from local scope
+                    var array = scope.ds();
+                    this.detectColumns(array);
+                    var filterAlgo = (scope.filterAlgorithm && angular.isFunction(scope.filterAlgorithm)) ===
+                        true ? scope.filterAlgorithm : filter('filter');
+                    //filter and sort are commutative
+                    var output = sortDataRow(arrayUtility.filter(array, filterAlgo, predicate), lastColumnSort);
+                    scope.numberOfPages = calculateNumberOfPages(output.length);
+                    return scope.isPaginationEnabled ? arrayUtility.fromTo(output, (scope.currentPage - 1) *
+                        scope.itemsByPage, scope.itemsByPage) : output;
+                }
             };
 
             /*////////////
@@ -511,7 +540,7 @@
              * @param columnConfig column configuration used to instantiate the new Column
              * @param index where to insert the column (at the end if not specified)
              */
-            this.insertColumn = function (columnConfig, index) {
+            this.insertColumn = function(columnConfig, index) {
                 var column = new Column(columnConfig);
                 arrayUtility.insertAt(scope.columns, index, column);
             };
@@ -520,7 +549,7 @@
              * remove the column at columnIndex from scope.columns
              * @param columnIndex index of the column to be removed
              */
-            this.removeColumn = function (columnIndex) {
+            this.removeColumn = function(columnIndex) {
                 arrayUtility.removeAt(scope.columns, columnIndex);
             };
 
@@ -529,14 +558,14 @@
              * @param oldIndex index of the column before it is moved
              * @param newIndex index of the column after the column is moved
              */
-            this.moveColumn = function (oldIndex, newIndex) {
+            this.moveColumn = function(oldIndex, newIndex) {
                 arrayUtility.moveAt(scope.columns, oldIndex, newIndex);
             };
 
             /**
              * remove all columns
              */
-            this.clearColumns = function () {
+            this.clearColumns = function() {
                 scope.columns.length = 0;
             };
 
@@ -545,13 +574,13 @@
              */
 
             /**
-             * select or unselect the item of the displayedCollection with the selection mode set in the scope
+             * select or unselect the item of the rows with the selection mode set in the scope
              * @param dataRow
              */
-            this.toggleSelection = function (dataRow) {
-                var index = scope.dataCollection.indexOf(dataRow);
+            this.toggleSelection = function(dataRow) {
+                var index = scope.rows.indexOf(dataRow);
                 if (index !== -1) {
-                    selectDataRow(scope.dataCollection, scope.selectionMode, index, dataRow.isSelected !== true);
+                    selectDataRow(scope.rows, scope.selectionMode, index, dataRow.isSelected !== true);
                 }
             };
 
@@ -559,15 +588,15 @@
              * select/unselect all the currently displayed rows
              * @param value if true select, else unselect
              */
-            this.toggleSelectionAll = function (value) {
+            this.toggleSelectionAll = function(value) {
                 var i = 0,
-                    l = scope.displayedCollection.length;
+                    l = scope.rows.length;
 
                 if (scope.selectionMode !== 'multiple') {
                     return;
                 }
                 for (; i < l; i++) {
-                    selectDataRow(scope.displayedCollection, scope.selectionMode, i, value === true);
+                    selectDataRow(scope.rows, scope.selectionMode, i, value === true);
                 }
             };
 
@@ -576,18 +605,18 @@
              * @param rowIndex
              * @returns {*} item just removed or undefined
              */
-            this.removeDataRow = function (rowIndex) {
-                var toRemove = arrayUtility.removeAt(scope.displayedCollection, rowIndex);
+            this.removeDataRow = function(rowIndex) {
+                var toRemove = arrayUtility.removeAt(scope.rows, rowIndex);
                 arrayUtility.removeAt(scope.dataCollection, scope.dataCollection.indexOf(toRemove));
             };
 
             /**
-             * move an item from oldIndex to newIndex in displayedCollection
+             * move an item from oldIndex to newIndex in rows
              * @param oldIndex
              * @param newIndex
              */
-            this.moveDataRow = function (oldIndex, newIndex) {
-                arrayUtility.moveAt(scope.displayedCollection, oldIndex, newIndex);
+            this.moveDataRow = function(oldIndex, newIndex) {
+                arrayUtility.moveAt(scope.rows, oldIndex, newIndex);
             };
 
             /**
@@ -596,103 +625,103 @@
              * @param propertyName the property on the dataRow ojbect to update
              * @param newValue the value to set
              */
-            this.updateDataRow = function (dataRow, propertyName, newValue) {
-                var index = scope.displayedCollection.indexOf(dataRow),
+            this.updateDataRow = function(dataRow, propertyName, newValue) {
+                var index = scope.rows.indexOf(dataRow),
                     getter = parse(propertyName),
                     setter = getter.assign,
                     oldValue;
                 if (index !== -1) {
-                    oldValue = getter(scope.displayedCollection[index]);
+                    oldValue = getter(scope.rows[index]);
                     if (oldValue !== newValue) {
-                        setter(scope.displayedCollection[index], newValue);
-                        scope.$emit('updateDataRow', {item: scope.displayedCollection[index]});
+                        setter(scope.rows[index], newValue);
+                        scope.$emit('updateDataRow', {
+                            item: scope.rows[index]
+                        });
                     }
                 }
             };
         }]);
 })(angular);
-
-
 angular.module('smartTable.templates', ['partials/defaultCell.html', 'partials/defaultHeader.html', 'partials/editableCell.html', 'partials/globalSearchCell.html', 'partials/pagination.html', 'partials/selectAllCheckbox.html', 'partials/selectionCheckbox.html', 'partials/smartTable.html']);
 
-angular.module("partials/defaultCell.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/defaultCell.html",
-        "{{formatedValue}}");
+angular.module("partials/defaultCell.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/defaultCell.html",
+    "{{formatedValue}}");
 }]);
 
-angular.module("partials/defaultHeader.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/defaultHeader.html",
-        "<span class=\"header-content\" ng-class=\"{'sort-ascent':column.reverse==true,'sort-descent':column.reverse==false}\">{{column.label}}</span>");
+angular.module("partials/defaultHeader.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/defaultHeader.html",
+    "<span class=\"header-content\" ng-class=\"{'sort-ascent':column.reverse==true,'sort-descent':column.reverse==false}\">{{column.label}}</span>");
 }]);
 
-angular.module("partials/editableCell.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/editableCell.html",
-        "<div ng-dblclick=\"toggleEditMode($event)\">\n" +
-            "    <span ng-hide=\"isEditMode\">{{value | format:column.formatFunction:column.formatParameter}}</span>\n" +
-            "\n" +
-            "    <form ng-submit=\"submit()\" ng-show=\"isEditMode\" name=\"myForm\">\n" +
-            "        <input name=\"myInput\" ng-model=\"value\" type=\"type\" input-type/>\n" +
-            "    </form>\n" +
-            "</div>");
+angular.module("partials/editableCell.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/editableCell.html",
+    "<div ng-dblclick=\"toggleEditMode($event)\">\n" +
+    "    <span ng-hide=\"isEditMode\">{{value | format:column.formatFunction:column.formatParameter}}</span>\n" +
+    "\n" +
+    "    <form ng-submit=\"submit()\" ng-show=\"isEditMode\" name=\"myForm\">\n" +
+    "        <input name=\"myInput\" ng-model=\"value\" type=\"type\" input-type/>\n" +
+    "    </form>\n" +
+    "</div>");
 }]);
 
-angular.module("partials/globalSearchCell.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/globalSearchCell.html",
-        "<label>Search :</label>\n" +
-            "<input type=\"text\" ng-model=\"searchValue\"/>");
+angular.module("partials/globalSearchCell.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/globalSearchCell.html",
+    "<label>Search :</label>\n" +
+    "<input type=\"text\" ng-model=\"searchValue\"/>");
 }]);
 
-angular.module("partials/pagination.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/pagination.html",
-        "<div class=\"pagination\">\n" +
-            "    <ul>\n" +
-            "        <li ng-repeat=\"page in pages\" ng-class=\"{active: page.active, disabled: page.disabled}\"><a\n" +
-            "                ng-click=\"selectPage(page.number)\">{{page.text}}</a></li>\n" +
-            "    </ul>\n" +
-            "</div> ");
+angular.module("partials/pagination.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/pagination.html",
+    "<div class=\"pagination\">\n" +
+    "    <ul>\n" +
+    "        <li ng-repeat=\"page in pages\" ng-class=\"{active: page.active, disabled: page.disabled}\"><a\n" +
+    "                ng-click=\"selectPage(page.number)\">{{page.text}}</a></li>\n" +
+    "    </ul>\n" +
+    "</div> ");
 }]);
 
-angular.module("partials/selectAllCheckbox.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/selectAllCheckbox.html",
-        "<input class=\"smart-table-select-all\"  type=\"checkbox\" ng-model=\"holder.isAllSelected\"/>");
+angular.module("partials/selectAllCheckbox.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/selectAllCheckbox.html",
+    "<input class=\"smart-table-select-all\"  type=\"checkbox\" ng-model=\"holder.isAllSelected\"/>");
 }]);
 
-angular.module("partials/selectionCheckbox.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/selectionCheckbox.html",
-        "<input type=\"checkbox\" ng-model=\"dataRow.isSelected\" stop-event=\"click\"/>");
+angular.module("partials/selectionCheckbox.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/selectionCheckbox.html",
+    "<input type=\"checkbox\" ng-model=\"dataRow.isSelected\" stop-event=\"click\"/>");
 }]);
 
-angular.module("partials/smartTable.html", []).run(["$templateCache", function ($templateCache) {
-    $templateCache.put("partials/smartTable.html",
-        "<table class=\"smart-table\">\n" +
-            "    <thead>\n" +
-            "    <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
-            "        <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\">\n" +
-            "        </td>\n" +
-            "    </tr>\n" +
-            "    <tr class=\"smart-table-header-row\">\n" +
-            "        <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
-            "            class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\">\n" +
-            "        </th>\n" +
-            "    </tr>\n" +
-            "    </thead>\n" +
-            "    <tbody>\n" +
-            "    <tr ng-repeat=\"dataRow in displayedCollection\" ng-class=\"{selected:dataRow.isSelected}\"\n" +
-            "        class=\"smart-table-data-row\">\n" +
-            "        <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
-            "    </tr>\n" +
-            "    </tbody>\n" +
-            "    <tfoot ng-show=\"isPaginationEnabled\">\n" +
-            "    <tr class=\"smart-table-footer-row\">\n" +
-            "        <td colspan=\"{{columns.length}}\">\n" +
-            "            <div pagination-smart-table=\"\" num-pages=\"numberOfPages\" max-size=\"maxSize\" current-page=\"currentPage\"></div>\n" +
-            "        </td>\n" +
-            "    </tr>\n" +
-            "    </tfoot>\n" +
-            "</table>\n" +
-            "\n" +
-            "\n" +
-            "");
+angular.module("partials/smartTable.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("partials/smartTable.html",
+    "<table class=\"smart-table\">\n" +
+    "    <thead>\n" +
+    "    <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
+    "        <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\">\n" +
+    "        </td>\n" +
+    "    </tr>\n" +
+    "    <tr class=\"smart-table-header-row\">\n" +
+    "        <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
+    "            class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\">\n" +
+    "        </th>\n" +
+    "    </tr>\n" +
+    "    </thead>\n" +
+    "    <tbody>\n" +
+    "    <tr ng-repeat=\"dataRow in rows\" ng-class=\"{selected:dataRow.isSelected}\"\n" +
+    "        class=\"smart-table-data-row\">\n" +
+    "        <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
+    "    </tr>\n" +
+    "    </tbody>\n" +
+    "    <tfoot ng-show=\"isPaginationEnabled\">\n" +
+    "    <tr class=\"smart-table-footer-row\">\n" +
+    "        <td colspan=\"{{columns.length}}\">\n" +
+    "            <div pagination-smart-table=\"\" num-pages=\"numberOfPages\" max-size=\"maxSize\" current-page=\"currentPage\"></div>\n" +
+    "        </td>\n" +
+    "    </tr>\n" +
+    "    </tfoot>\n" +
+    "</table>\n" +
+    "\n" +
+    "\n" +
+    "");
 }]);
 
 (function (angular) {
@@ -734,7 +763,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
                  * @param index
                  * @param item
                  */
-                    insertAt = function (arrayRef, index, item) {
+                insertAt = function (arrayRef, index, item) {
                     if (index >= 0 && index < arrayRef.length) {
                         arrayRef.splice(index, 0, item);
                     } else {
@@ -748,7 +777,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
                  * @param oldIndex
                  * @param newIndex
                  */
-                    moveAt = function (arrayRef, oldIndex, newIndex) {
+                moveAt = function (arrayRef, oldIndex, newIndex) {
                     var elementToMove;
                     if (oldIndex >= 0 && oldIndex < arrayRef.length && newIndex >= 0 && newIndex < arrayRef.length) {
                         elementToMove = arrayRef.splice(oldIndex, 1)[0];
@@ -764,7 +793,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
                  * @param reverse
                  * @returns {*}
                  */
-                    sort = function (arrayRef, sortAlgorithm, predicate, reverse) {
+                sort = function (arrayRef, sortAlgorithm, predicate, reverse) {
 
                     if (!sortAlgorithm || !angular.isFunction(sortAlgorithm)) {
                         return arrayRef;
@@ -780,7 +809,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
                  * @param predicate
                  * @returns {*}
                  */
-                    filter = function (arrayRef, filterAlgorithm, predicate) {
+                filter = function (arrayRef, filterAlgorithm, predicate) {
                     if (!filterAlgorithm || !angular.isFunction(filterAlgorithm)) {
                         return arrayRef;
                     } else {
@@ -795,7 +824,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
                  * @param length
                  * @returns {*}
                  */
-                    fromTo = function (arrayRef, min, length) {
+                fromTo = function (arrayRef, min, length) {
 
                     var out = [],
                         limit,
@@ -828,6 +857,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function (
             };
         });
 })(angular);
+
 
 
 (function (angular) {
