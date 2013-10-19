@@ -54,7 +54,8 @@ var app = angular.module('myApp', ['smartTable.table']).
             isPaginationEnabled: false,
             isGlobalSearchActivated: false,
             itemsByPage: 20,
-            syncColumns: false
+            syncColumns: false,
+            selectionMode: 'single'
         };
 
         scope.shuffleColumns = function() {

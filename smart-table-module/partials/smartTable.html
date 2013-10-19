@@ -12,7 +12,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="dataRow in rows" ng-class="{selected:dataRow.isSelected}"
+        <tr ng-repeat="dataRow in rows" ng-class="{'success':dataRow.isSelected}"
             class="smart-table-data-row">
             <td ng-repeat="column in columns" class="smart-table-data-cell {{column.cellClass}}"></td>
         </tr>

@@ -63,7 +63,7 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function($
     "        </tr>\n" +
     "        </thead>\n" +
     "        <tbody>\n" +
-    "        <tr ng-repeat=\"dataRow in rows\" ng-class=\"{selected:dataRow.isSelected}\"\n" +
+    "        <tr ng-repeat=\"dataRow in rows\" ng-class=\"{'success':dataRow.isSelected}\"\n" +
     "            class=\"smart-table-data-row\">\n" +
     "            <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
     "        </tr>\n" +
