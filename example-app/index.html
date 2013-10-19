@@ -10,9 +10,9 @@
 <input type="text" ng-model="rowCollection[0].name"/>
 
 <button class="shuffle" ng-click="shuffleColumns()">Shuffle Columns</button>
-<smart-table class="table table-striped" 
+<smart-table table-css="table table-striped"
 		table-title="Smart Table example" columns="columnCollection"
-        ds="ds" config="globalConfig"></smart-table>
+		ds="ds" config="globalConfig"></smart-table>
 
 <!-- In production use:
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.4/angular.min.js"></script>

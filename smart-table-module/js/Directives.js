@@ -17,6 +17,8 @@
 
                     var templateObject;
 
+                    scope.tableCss = attr.tableCss;
+
                     scope.$watch('config', function (config) {
                         var newConfig = angular.extend({}, defaultConfig, config),
                             length = scope.columns !== undefined ? scope.columns.length : 0;

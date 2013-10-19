@@ -24,7 +24,7 @@ var app = angular.module('myApp', ['smartTable.table']).
         // you can load data from remote here.
         scope.ds = function(page, pageSize, sortby, reverse) {
             var rows = [];
-            for (var i = 0; i < 100; i++) {
+            for (var i = 0; i < 20; i++) {
                 rows.push(generateRandomItem(i));
             }
             return {
@@ -51,9 +51,9 @@ var app = angular.module('myApp', ['smartTable.table']).
         ];
 
         scope.globalConfig = {
-            isPaginationEnabled: true,
+            isPaginationEnabled: false,
             isGlobalSearchActivated: false,
-            itemsByPage: 100,
+            itemsByPage: 20,
             syncColumns: false
         };
 
