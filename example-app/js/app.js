@@ -20,15 +20,9 @@ var app = angular.module('myApp', ['smartTable.table']).
                 };
             };
 
-        scope.rowCollection = [];
 
-
-
-        for (var i = 0; i < 400; i++) {
-            scope.rowCollection.push(generateRandomItem(i));
-        }
-
-        scope.ds = function(page, pageSize, sort) {
+        // you can load data from remote here.
+        scope.ds = function(page, pageSize, sortby, reverse) {
             var rows = [];
             for (var i = 0; i < 100; i++) {
                 rows.push(generateRandomItem(i));
@@ -39,16 +33,22 @@ var app = angular.module('myApp', ['smartTable.table']).
                 data: rows
             };
         };
+
+        // load data from local
+        // scope.rowCollection = [];
+        // for (var i = 0; i < 400; i++) {
+        //     scope.rowCollection.push(generateRandomItem(i));
+        // }
         // scope.ds = scope.rowCollection;
 
 
-        // scope.columnCollection = [
-        //     {label: 'id', map: 'id'},
-        //     {label: 'Name', map: 'name'},
-        //     {label: 'Age', map:'age'},
-        //     {label: 'Balance', map: 'balance', isEditable: true, type: 'number', formatFunction: 'currency', formatParameter: '$'},
-        //     {label: 'Email', map: 'email', type: 'email', isEditable: true}
-        // ];
+        scope.columnCollection = [
+            {label: 'id', map: 'id'},
+            {label: 'Name', map: 'name'},
+            {label: 'Age', map:'age'},
+            {label: 'Balance', map: 'balance', isEditable: true, type: 'number', formatFunction: 'currency', formatParameter: '$'},
+            {label: 'Email', map: 'email', type: 'email', isEditable: true}
+        ];
 
         scope.globalConfig = {
             isPaginationEnabled: true,
