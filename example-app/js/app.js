@@ -67,4 +67,5 @@ var app = angular.module('myApp', ['smartTable.table']).
             shuffle(newColumns);
             scope.columnCollection = newColumns;
         };
+
     }]);

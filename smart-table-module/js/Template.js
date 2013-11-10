@@ -52,29 +52,24 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function($
     "<div class=\"smart-table\">\n" +
     "    <table class=\"{{tableCss}}\">\n" +
     "        <thead>\n" +
-    "        <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
-    "            <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\">\n" +
-    "            </td>\n" +
-    "        </tr>\n" +
-    "        <tr class=\"smart-table-header-row\">\n" +
-    "            <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
-    "                class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\">\n" +
-    "            </th>\n" +
-    "        </tr>\n" +
+    "            <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
+    "                <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\"></td>\n" +
+    "            </tr>\n" +
+    "            <tr class=\"smart-table-header-row\">\n" +
+    "                <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
+    "                class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\"></th>\n" +
+    "            </tr>\n" +
     "        </thead>\n" +
     "        <tbody>\n" +
-    "        <tr ng-repeat=\"dataRow in rows\" ng-class=\"{'success':dataRow.isSelected}\"\n" +
+    "            <tr ng-repeat=\"dataRow in rows\" ng-class=\"{'success':dataRow.isSelected}\"\n" +
     "            class=\"smart-table-data-row\">\n" +
-    "            <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
-    "        </tr>\n" +
+    "                <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
+    "            </tr>\n" +
     "        </tbody>\n" +
     "    </table>\n" +
     "    <div ng-show=\"isPaginationEnabled\">\n" +
-    "    <div  pagination-smart-table=\"\" num-pages=\"numberOfPages\" \n" +
+    "        <div  pagination-smart-table=\"\" num-pages=\"numberOfPages\" \n" +
     "        max-size=\"maxSize\" current-page=\"currentPage\"></div>\n" +
     "    </div>\n" +
-    "<div>\n" +
-    "\n" +
-    "\n" +
-    "");
+    "</div>");
 }]);

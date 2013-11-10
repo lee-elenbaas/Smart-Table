@@ -431,12 +431,23 @@
                 var oldPage = scope.currentPage;
                 if (angular.isNumber(page.page)) {
                     scope.currentPage = page.page;
-                    scope.rows = this.pipe();
-                    scope.holder.isAllSelected = isAllSelected();
-                    scope.$emit('changePage', {
-                        oldValue: oldPage,
-                        newValue: scope.currentPage
-                    });
+                    if (scope.remote) {
+                        this.pipe().then(function(data){
+                            scope.rows = data;
+                            scope.holder.isAllSelected = isAllSelected();
+                            scope.$emit('changePage', {
+                                oldValue: oldPage,
+                                newValue: scope.currentPage
+                            });
+                        });
+                    } else {
+                        scope.rows = this.pipe();
+                        scope.holder.isAllSelected = isAllSelected();
+                        scope.$emit('changePage', {
+                            oldValue: oldPage,
+                            newValue: scope.currentPage
+                        });
+                    }
                 }
             };
 
@@ -460,7 +471,13 @@
                     }
                 }
 
-                scope.rows = this.pipe();
+                if (scope.remote) {
+                    this.pipe().then(function(data){
+                        scope.rows = data;
+                    });
+                } else {
+                    scope.rows = this.pipe();
+                }
             };
 
             /**
@@ -485,7 +502,14 @@
                 for (j = 0; j < l; j++) {
                     predicate[scope.columns[j].map] = scope.columns[j].filterPredicate;
                 }
-                scope.rows = this.pipe();
+
+                if (scope.remote) {
+                    this.pipe().then(function(data){
+                        scope.rows = data;
+                    });
+                } else {
+                    scope.rows = this.pipe();
+                }
             };
 
 
@@ -513,11 +537,12 @@
                     var ds = scope.ds();
                     var sortby = lastColumnSort ? lastColumnSort.map : null;
                     var reverse = lastColumnSort ? lastColumnSort.reverse : null;
-                    var result = ds(scope.currentPage, scope.itemsByPage, sortby, reverse);
-                    scope.currentPage = result.page;
-                    scope.numberOfPages = calculateNumberOfPages(result.count);
-                    this.detectColumns(result.data);
-                    return result.data;
+                    return ds(scope.currentPage, scope.itemsByPage, sortby, reverse).then(function(result){
+                        scope.currentPage = result.page;
+                        scope.numberOfPages = calculateNumberOfPages(result.count);
+                        this.detectColumns(result.data);
+                        return result.data;
+                    });
                 } else {
                     // load data from local scope
                     var array = scope.ds();
@@ -698,31 +723,26 @@ angular.module("partials/smartTable.html", []).run(["$templateCache", function($
     "<div class=\"smart-table\">\n" +
     "    <table class=\"{{tableCss}}\">\n" +
     "        <thead>\n" +
-    "        <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
-    "            <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\">\n" +
-    "            </td>\n" +
-    "        </tr>\n" +
-    "        <tr class=\"smart-table-header-row\">\n" +
-    "            <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
-    "                class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\">\n" +
-    "            </th>\n" +
-    "        </tr>\n" +
+    "            <tr class=\"smart-table-global-search-row\" ng-show=\"isGlobalSearchActivated\">\n" +
+    "                <td class=\"smart-table-global-search\" column-span=\"{{columns.length}}\" colspan=\"{{columnSpan}}\"></td>\n" +
+    "            </tr>\n" +
+    "            <tr class=\"smart-table-header-row\">\n" +
+    "                <th ng-repeat=\"column in columns\" ng-include=\"column.headerTemplateUrl\"\n" +
+    "                class=\"smart-table-header-cell {{column.headerClass}}\" scope=\"col\"></th>\n" +
+    "            </tr>\n" +
     "        </thead>\n" +
     "        <tbody>\n" +
-    "        <tr ng-repeat=\"dataRow in rows\" ng-class=\"{'success':dataRow.isSelected}\"\n" +
+    "            <tr ng-repeat=\"dataRow in rows\" ng-class=\"{'success':dataRow.isSelected}\"\n" +
     "            class=\"smart-table-data-row\">\n" +
-    "            <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
-    "        </tr>\n" +
+    "                <td ng-repeat=\"column in columns\" class=\"smart-table-data-cell {{column.cellClass}}\"></td>\n" +
+    "            </tr>\n" +
     "        </tbody>\n" +
     "    </table>\n" +
     "    <div ng-show=\"isPaginationEnabled\">\n" +
-    "    <div  pagination-smart-table=\"\" num-pages=\"numberOfPages\" \n" +
+    "        <div  pagination-smart-table=\"\" num-pages=\"numberOfPages\" \n" +
     "        max-size=\"maxSize\" current-page=\"currentPage\"></div>\n" +
     "    </div>\n" +
-    "<div>\n" +
-    "\n" +
-    "\n" +
-    "");
+    "</div>");
 }]);
 
 (function (angular) {
