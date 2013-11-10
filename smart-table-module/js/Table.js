@@ -103,12 +103,23 @@
                 var oldPage = scope.currentPage;
                 if (angular.isNumber(page.page)) {
                     scope.currentPage = page.page;
-                    scope.rows = this.pipe();
-                    scope.holder.isAllSelected = isAllSelected();
-                    scope.$emit('changePage', {
-                        oldValue: oldPage,
-                        newValue: scope.currentPage
-                    });
+                    if (scope.remote) {
+                        this.pipe().then(function(data){
+                            scope.rows = data;
+                            scope.holder.isAllSelected = isAllSelected();
+                            scope.$emit('changePage', {
+                                oldValue: oldPage,
+                                newValue: scope.currentPage
+                            });
+                        });
+                    } else {
+                        scope.rows = this.pipe();
+                        scope.holder.isAllSelected = isAllSelected();
+                        scope.$emit('changePage', {
+                            oldValue: oldPage,
+                            newValue: scope.currentPage
+                        });
+                    }
                 }
             };
 
@@ -132,7 +143,13 @@
                     }
                 }
 
-                scope.rows = this.pipe();
+                if (scope.remote) {
+                    this.pipe().then(function(data){
+                        scope.rows = data;
+                    });
+                } else {
+                    scope.rows = this.pipe();
+                }
             };
 
             /**
@@ -157,7 +174,14 @@
                 for (j = 0; j < l; j++) {
                     predicate[scope.columns[j].map] = scope.columns[j].filterPredicate;
                 }
-                scope.rows = this.pipe();
+
+                if (scope.remote) {
+                    this.pipe().then(function(data){
+                        scope.rows = data;
+                    });
+                } else {
+                    scope.rows = this.pipe();
+                }
             };
 
 
@@ -185,11 +209,12 @@
                     var ds = scope.ds();
                     var sortby = lastColumnSort ? lastColumnSort.map : null;
                     var reverse = lastColumnSort ? lastColumnSort.reverse : null;
-                    var result = ds(scope.currentPage, scope.itemsByPage, sortby, reverse);
-                    scope.currentPage = result.page;
-                    scope.numberOfPages = calculateNumberOfPages(result.count);
-                    this.detectColumns(result.data);
-                    return result.data;
+                    return ds(scope.currentPage, scope.itemsByPage, sortby, reverse).then(function(result){
+                        scope.currentPage = result.page;
+                        scope.numberOfPages = calculateNumberOfPages(result.count);
+                        this.detectColumns(result.data);
+                        return result.data;
+                    });
                 } else {
                     // load data from local scope
                     var array = scope.ds();
