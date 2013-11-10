@@ -537,10 +537,11 @@
                     var ds = scope.ds();
                     var sortby = lastColumnSort ? lastColumnSort.map : null;
                     var reverse = lastColumnSort ? lastColumnSort.reverse : null;
+                    var $this = this;
                     return ds(scope.currentPage, scope.itemsByPage, sortby, reverse).then(function(result){
                         scope.currentPage = result.page;
                         scope.numberOfPages = calculateNumberOfPages(result.count);
-                        this.detectColumns(result.data);
+                        $this.detectColumns(result.data);
                         return result.data;
                     });
                 } else {
