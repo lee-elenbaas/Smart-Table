@@ -357,6 +357,13 @@
             var predicate = {},
                 lastColumnSort;
 
+            var $this = this;
+            // add refresh event
+            scope.$on('reloadST', function(event){
+                $this.sortBy();
+            });
+
+
             function isAllSelected() {
                 var i,
                     l = scope.rows.length;
